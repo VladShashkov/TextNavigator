@@ -157,8 +157,7 @@ def _resolve_one(number: str, docs: list[Document], check: date) -> ContractResu
                 r.proposals.append(Proposal(fact.value, fact.display, d.filename, d.title,
                                             reason, fact.evidence))
                 if review:
-                    r.status = REVIEW
-                    r.notes.append(f"Есть документ с неопределённым статусом: {d.label()}")
+                    r.status = REVIEW   # причина уже в issues договора
 
     # Два применённых ДС с одной датой вступления, меняющие одно поле по-разному
     for f in ("amount", "deadline"):

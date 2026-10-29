@@ -1,0 +1,41 @@
+{
+  "_comment": "Эталон: значение (null = нет данных), статус и файл-основание. Пути относительно корня репозитория.",
+  "cases": [
+    {
+      "name": "Исходный комплект, 10.03.2026",
+      "check_date": "2026-03-10",
+      "files": ["documents/*.txt"],
+      "expected": {
+        "STN-101": {"amount": [1380000, "ok", "02_amendment_signed.txt"], "deadline": ["2026-04-30", "ok", "02_amendment_signed.txt"], "deadline_proposals": ["10.05.2026"]},
+        "STN-102": {"amount": [840000, "ok", "03_contract.txt"], "deadline": ["2026-03-20", "ok", "03_contract.txt"], "deadline_proposals": ["27.03.2026"]},
+        "STN-103": {"amount": [null, "no_data", "04_contract.txt"], "deadline": ["2026-04-30", "ok", "04_contract.txt"], "deadline_proposals": []}
+      }
+    },
+    {
+      "name": "Дата проверки до вступления ДС № 1",
+      "check_date": "2026-02-28",
+      "files": ["documents/*.txt"],
+      "expected": {
+        "STN-101": {"amount": [1200000, "ok", "01_contract.txt"], "deadline": ["2026-04-15", "ok", "01_contract.txt"], "deadline_proposals": ["10.05.2026", "30.04.2026"]}
+      }
+    },
+    {
+      "name": "Изменено поле суммы + новый договор STN-104",
+      "check_date": "2026-03-10",
+      "files": ["documents/01_contract.txt", "documents/02_amendment_signed.txt", "eval/fixtures/03_contract_changed_amount.txt", "eval/fixtures/new_contract_STN-104.txt"],
+      "expected": {
+        "STN-102": {"amount": [910000, "ok", "03_contract_changed_amount.txt"]},
+        "STN-104": {"amount": [2345000, "ok", "new_contract_STN-104.txt"], "deadline": ["2026-03-28", "ok", "new_contract_STN-104.txt"]}
+      }
+    },
+    {
+      "name": "ДС со статусом «на подписание» и ДС, вступающее позже",
+      "check_date": "2026-03-10",
+      "files": ["documents/03_contract.txt", "documents/04_contract.txt", "eval/fixtures/amendment_STN-102_unknown_status.txt", "eval/fixtures/amendment_STN-103_future.txt"],
+      "expected": {
+        "STN-102": {"amount": [840000, "needs_review", "03_contract.txt"]},
+        "STN-103": {"deadline": ["2026-04-30", "ok", "04_contract.txt"], "deadline_proposals": ["25.03.2026"]}
+      }
+    }
+  ]
+}

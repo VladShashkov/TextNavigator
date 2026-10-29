@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TextNavigator — условия договоров поставки</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>TextNavigator</h1>
+  <p class="sub">Сумма и срок поставки по договорам — с цитатой и переходом к исходному абзацу</p>
+</header>
+
+<main>
+  <section class="panel controls">
+    <label class="drop" id="drop">
+      <input type="file" id="files" accept=".txt,text/plain" multiple>
+      <span><b>Выберите TXT-файлы</b> или перетащите сюда — договоры, допсоглашения, письма</span>
+    </label>
+    <div class="row">
+      <label>Дата проверки <input type="date" id="checkDate" value="2026-03-10"></label>
+      <span id="loaded" class="muted"></span>
+    </div>
+    <div id="error" class="error" hidden></div>
+  </section>
+
+  <section class="panel" id="resultBlock" hidden>
+    <h2>Договоры на дату проверки</h2>
+    <div class="table-wrap">
+      <table id="table">
+        <thead><tr>
+          <th>Договор</th><th>Поставщик</th><th>Сумма</th><th>Срок поставки</th>
+          <th>Не согласовано</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="muted small">Нажмите на значение — справа откроется основание и исходный абзац.
+      Условия меняет только допсоглашение, подписанное обеими сторонами и вступившее в силу к дате проверки.</p>
+    <div id="unassigned"></div>
+  </section>
+
+  <section class="panel" id="askBlock" hidden>
+    <h2>Вопросы</h2>
+    <div class="quick">
+      <button data-q="1">1. Срок STN-101</button>
+      <button data-q="2">2. Сумма STN-102</button>
+      <button data-q="3">3. Сумма STN-103</button>
+      <button data-q="4">4. Поставки до 01.04 и несогласованные сроки</button>
+    </div>
+    <div class="ask-grid">
+      <form id="askField" class="ask">
+        <span class="ask-title">Значение по договору</span>
+        <select id="askContract"></select>
+        <select id="askWhat">
+          <option value="deadline">срок поставки</option>
+          <option value="amount">сумма</option>
+          <option value="supplier">поставщик</option>
+        </select>
+        <button type="submit">Показать</button>
+      </form>
+      <form id="askBefore" class="ask">
+        <span class="ask-title">Поставка раньше даты</span>
+        <input type="date" id="beforeDate" value="2026-04-01">
+        <button type="submit">Найти</button>
+      </form>
+    </div>
+    <div id="answer" class="answer" hidden></div>
+  </section>
+
+  <section class="panel" id="docsBlock" hidden>
+    <h2>Загруженные документы</h2>
+    <table class="docs"><thead><tr><th>Файл</th><th>Документ</th><th>Договор</th><th>Как учтён</th></tr></thead><tbody></tbody></table>
+  </section>
+</main>
+
+<aside id="source" class="source" hidden>
+  <div class="source-head">
+    <div id="sourceMeta"></div>
+    <button id="closeSource" title="Закрыть">×</button>
+  </div>
+  <div id="basis"></div>
+  <div id="docText" class="doc-text"></div>
+</aside>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

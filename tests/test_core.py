@@ -180,6 +180,14 @@ def test_unknown_status_needs_review():
     assert c["deadline"]["value"] == "2026-04-30"   # действующее значение не подменяется
 
 
+def test_sent_for_signature_is_unknown_not_signed():
+    # регрессия: «на подписание» содержит «подписан», но это не подпись
+    files = base_files() | {"x.txt": _amendment("направлено покупателю на подписание.")}
+    c = contract(run(files), "STN-103")
+    assert c["deadline"]["status"] == "needs_review" and c["deadline"]["value"] == "2026-04-30"
+    assert "не определён" in c["deadline"]["proposals"][0]["reason"]
+
+
 def test_signed_without_effective_date_needs_review():
     text = _amendment("подписано обеими сторонами 05.03.2026.").replace(
         "2. Настоящее соглашение вступает в силу 05.03.2026.", "")

@@ -24,6 +24,7 @@ LETTER_REF = re.compile(r"договор[а-я]*(?:\s+поставки)?\s*(?:�
 
 STATUS_LINE = re.compile(r"^Статус\s*:\s*(.+)$", re.I)
 SIGNED_BOTH = re.compile(r"подписан[оа]?\s+обеими\s+сторонами(?:\s+(" + DATE_PATTERN + "))?", re.I)
+ONE_SIDE = re.compile(r"\bподписан[оа]?\s+(?:только\s+)?(?:поставщиком|покупателем|одной\s+стороной)", re.I)
 NOT_SIGNED = re.compile(r"\bне\s+подписан|\bпроект\b", re.I)
 EFFECTIVE = re.compile(r"вступает\s+в\s+силу\s+(?:с\s+)?(" + DATE_PATTERN + ")", re.I)
 DOC_DATE = re.compile(r"^Дата(?:\s+проекта)?\s*:\s*(" + DATE_PATTERN + ")", re.I)
@@ -86,8 +87,9 @@ def _parse_status(doc: Document) -> None:
                 doc.status, doc.status_text = SIGNED, st.rstrip(".")
                 if sm.group(1):
                     doc.signed_date = parse_date(sm.group(1))
-            elif re.search(r"подписан", st, re.I):
-                # «подписан поставщиком» — не обеими сторонами
+            elif ONE_SIDE.search(st):
+                # «подписан поставщиком» — не обеими сторонами. Простое вхождение
+                # «подписан» не годится: «направлено на подписание» ≠ подписано.
                 doc.status, doc.status_text = UNSIGNED, st.rstrip(".") + " (не обеими сторонами)"
             else:
                 doc.status, doc.status_text = STATUS_UNKNOWN, st.rstrip(".")

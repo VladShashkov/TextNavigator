@@ -11,6 +11,7 @@ import re
 from collections import defaultdict
 from datetime import date
 
+from .extractors import FIELD_MENTION
 from .model import (AMENDMENT, CONTRACT, LETTER, NO_DATA, OK, REVIEW, SIGNED, STATUS_UNKNOWN,
                     UNSIGNED, ContractResult, Document, Fact, FieldResult, Proposal)
 from .textutil import fmt_date
@@ -125,6 +126,10 @@ def _resolve_one(number: str, docs: list[Document], check: date) -> ContractResu
         for f in FIELDS:
             facts = [x for x in d.facts if x.field == f]
             if not facts:
+                mention = FIELD_MENTION.get(f)
+                if applied and d.kind == AMENDMENT and mention and any(mention.search(p.text) for p in d.paragraphs[1:]):
+                    fields[f].status = REVIEW
+                    fields[f].notes.append(f"{d.label()} упоминает {FIELD_NAMES[f]}, но значение не извлечено")
                 continue
             r = fields[f]
             if f == "supplier":
@@ -143,7 +148,9 @@ def _resolve_one(number: str, docs: list[Document], check: date) -> ContractResu
             if fact.value is None:
                 if applied:
                     r.status = REVIEW
-                    r.notes.append(f"{d.label()} меняет пункт о стоимости, но числа нет")
+                    r.notes.append(f"{d.label()}: {fact.note or 'пункт изменён, но значения нет'}")
+                else:
+                    r.proposals.append(Proposal(None, fact.display, d.filename, d.title, reason, fact.evidence))
                 continue
             if applied:
                 r.history.append({"display": fact.display, "doc": d.label(), "evidence": fact.evidence})

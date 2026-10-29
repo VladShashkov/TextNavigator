@@ -232,3 +232,22 @@ def test_missing_amount_clause_is_no_data():
         l for l in files["03_contract.txt"].splitlines() if not l.startswith("2.1."))
     a = contract(run(files), "STN-102")["amount"]
     assert a["status"] == "no_data" and a["value"] is None
+
+
+def test_relative_amount_change_is_not_a_total():
+    # «увеличить на 100 000» — разница, а не новая сумма; подписанное ДС → проверка, не выдумка
+    text = _amendment("подписано обеими сторонами 05.03.2026.").replace("STN-103", "STN-102").replace(
+        "ПромСнаб Сервис", "Контур Электро").replace(
+        "1. Пункт 3.1 договора изложить в следующей редакции: «Поставщик обязуется поставить запасные части не позднее 25.03.2026».",
+        "1. Увеличить общую стоимость поставки на 100 000 рублей.")
+    a = contract(run(base_files() | {"x.txt": text}), "STN-102")["amount"]
+    assert a["status"] == "needs_review" and a["value"] == 840_000
+    assert all(h["display"] != "100 000 ₽" for h in a["history"])
+
+
+def test_applied_amendment_with_unparsed_deadline_needs_review():
+    text = _amendment("подписано обеими сторонами 05.03.2026.").replace(
+        "«Поставщик обязуется поставить запасные части не позднее 25.03.2026»",
+        "«Срок поставки продлевается на 10 рабочих дней»")
+    d = contract(run(base_files() | {"x.txt": text}), "STN-103")["deadline"]
+    assert d["status"] == "needs_review"

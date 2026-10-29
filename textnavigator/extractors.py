@@ -23,12 +23,21 @@ WORDS = r"(?:\s*\([^)]*\))?"      # «(один миллион двести ты
 AMOUNT_RULES = [
     # договор / подписанное ДС: «Общая стоимость поставки составляет 1 200 000 (...) рублей»
     re.compile(r"[Оо]бщая\s+стоимость[^.;]{0,60}?\s+составляет\s+(" + AMOUNT_PATTERN + ")" + WORDS + r"\s*" + RUB),
-    # проект / письмо: «изменить общую стоимость поставки на 1 450 000 рублей»
-    re.compile(r"(?:изменить|увеличить|уменьшить)\s+(?:общую\s+)?стоимость[^.;]{0,60}?\s+на\s+("
+    # проект / письмо: «изменить общую стоимость поставки на 1 450 000 рублей».
+    # «увеличить/уменьшить на N» — это разница, а не новая сумма: см. RELATIVE_AMOUNT.
+    re.compile(r"изменить\s+(?:общую\s+)?стоимость[^.;]{0,60}?\s+на\s+("
                + AMOUNT_PATTERN + ")" + WORDS + r"\s*" + RUB, re.I),
 ]
 # «Общая стоимость» упомянута, но числа нет — фиксируем как «нет данных» с цитатой-объяснением
 AMOUNT_MENTION = re.compile(r"[Оо]бщая\s+стоимость", re.I)
+RELATIVE_AMOUNT = re.compile(r"(?:увеличить|уменьшить|увеличивается|уменьшается)[^.;]{0,60}?(?:стоимост|цен)[^.;]{0,40}?на\s+("
+                             + AMOUNT_PATTERN + ")" + WORDS + r"\s*" + RUB, re.I)
+
+# Упоминание поля без извлечённого значения в применяемом ДС → «требует проверки»
+FIELD_MENTION = {
+    "amount": re.compile(r"стоимост", re.I),
+    "deadline": re.compile(r"срок\w*\s+поставки|обязуется\s+поставить", re.I),
+}
 
 # --- срок поставки -----------------------------------------------------------
 DEADLINE_RULES = [
@@ -60,6 +69,11 @@ def _facts(doc: Document, field: str, rules, convert, fmt) -> list[Fact]:
 
 def extract_amount(doc: Document) -> list[Fact]:
     facts = _facts(doc, "amount", AMOUNT_RULES, parse_amount, fmt_amount)
+    for p in doc.paragraphs:
+        for m in RELATIVE_AMOUNT.finditer(p.text):
+            ev = Evidence.of(doc, p, p.start + m.start(), p.start + m.end())
+            facts.append(Fact("amount", None, f"изменение на {m.group(1)} ₽ (не итоговая сумма)", ev,
+                              note="Относительное изменение стоимости — итоговую сумму нужно пересчитать вручную"))
     if not facts:
         # Пункт о стоимости есть, но числа в нём нет («определяется спецификацией»)
         for p in doc.paragraphs:
